@@ -83,6 +83,8 @@ struct inode
 		void *i_cdev;
 	};
 
+	spinlock_t i_lock;	/* i_blocks, i_bytes, maybe i_size */
+
 	unsigned long i_state;
 	atomic_t i_count;
 	loff_t i_size;
