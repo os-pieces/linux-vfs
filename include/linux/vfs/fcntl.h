@@ -1,7 +1,17 @@
 #pragma once
 
-#include <fcntl.h>
-
+#ifndef O_TRUNC
+#define O_TRUNC		00001000	/* not fcntl */
+#endif
+#ifndef O_CREAT
+#define O_CREAT		00000100	/* not fcntl */
+#endif
+#ifndef O_EXCL
+#define O_EXCL		00000200	/* not fcntl */
+#endif
+#ifndef O_APPEND
+#define O_APPEND	00002000
+#endif
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
 #endif
@@ -49,6 +59,9 @@
 #ifndef O_ACCMODE
 #define O_ACCMODE	00000003
 #endif
+#define O_RDONLY	00000000
+#define O_WRONLY	00000001
+#define O_RDWR		00000002
 
 #define VALID_RESOLVE_FLAGS \
 	(RESOLVE_NO_XDEV | RESOLVE_NO_MAGICLINKS | RESOLVE_NO_SYMLINKS | \

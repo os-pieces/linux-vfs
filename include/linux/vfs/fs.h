@@ -10,7 +10,7 @@
 #include <linux/kernel.h>
 #include <linux/rcupdate.h>
 #include <linux/limits.h>
-#include <linux/slab.h>
+#include <linux/stdlib.h>
 #include <linux/vfs/audit.h>
 #include <linux/bug.h>
 #include <linux/spinlock.h>
@@ -32,6 +32,7 @@
 #include <uapi/linux/magic.h>
 #include <uapi/linux/fs.h>
 #include <linux/fs_types.h>
+#include <linux/hlist.h>
 
 #include <linux/pagemap.h>
 
