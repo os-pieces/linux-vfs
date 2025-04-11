@@ -11,7 +11,7 @@
 #include <linux/rcupdate.h>
 #include <linux/limits.h>
 #include <linux/slab.h>
-#include <linux/audit.h>
+#include <linux/vfs/audit.h>
 #include <linux/bug.h>
 #include <linux/spinlock.h>
 #include <linux/uaccess.h>
