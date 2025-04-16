@@ -36,7 +36,7 @@ int simple_offset_add(struct offset_ctx *octx, struct dentry *dentry)
 
 void simple_offset_init(struct offset_ctx *octx)
 {
-	mt_init_flags(&octx->mt, MT_FLAGS_ALLOC_RANGE);
+	//TODO mt_init_flags(&octx->mt, MT_FLAGS_ALLOC_RANGE);
 
 	octx->next_offset = DIR_OFFSET_MIN;
 }
