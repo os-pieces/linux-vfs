@@ -40,7 +40,7 @@ static inline ssize_t call_readops(struct file *file, char __user *buf, size_t c
     if (file->f_op->read)
         ret = file->f_op->read(file, buf, count, pos);
     else if (file->f_op->read_iter)
-        ret = ret = new_sync_read(file, buf, count, pos);
+        ret = new_sync_read(file, buf, count, pos);
     else
         ret = -EINVAL;
 

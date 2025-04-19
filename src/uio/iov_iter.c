@@ -39,6 +39,25 @@ static size_t memcpy_from_iter(void *iter_from, size_t progress,
     return 0;
 }
 
+static size_t memcpy_to_iter(void *iter_to, size_t progress,
+                             size_t len, void *from, void *priv2)
+{
+    memcpy(iter_to, from + progress, len);
+
+    return 0;
+}
+
+static size_t copy_to_user_iter(void __user *iter_to, size_t progress,
+                                size_t len, void *from, void *priv2)
+{
+    if (1)
+    {
+        len = raw_copy_to_user(iter_to, from, len);
+    }
+
+    return len;
+}
+
 static inline size_t iterate_ubuf(struct iov_iter *iter, size_t len, void *priv, void *priv2,
                                   iov_ustep_f step)
 {
@@ -94,7 +113,13 @@ size_t copy_from_iter(void *addr, size_t bytes, struct iov_iter *i)
     return ret;
 }
 
+size_t _copy_to_iter(const void *addr, size_t bytes, struct iov_iter *i)
+{
+    return iterate_and_advance(i, bytes, (void *)addr,
+                               copy_to_user_iter, memcpy_to_iter);
+}
+
 size_t copy_to_iter(const void *addr, size_t bytes, struct iov_iter *i)
 {
-    return 0;
+    return _copy_to_iter(addr, bytes, i);
 }
