@@ -25,7 +25,7 @@ int fdget_pos(filedesc_t *fdp, unsigned int fd, struct fd *f)
     error = fdget(fdp, fd, f);
     if (!error)
     {
-        pr_todo();
+        // TODO
     }
 
     return error;
