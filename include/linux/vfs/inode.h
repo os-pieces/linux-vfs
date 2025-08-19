@@ -137,6 +137,7 @@ void drop_nlink(struct inode *inode);
 struct timespec64 current_time(struct inode *inode);
 void clear_nlink(struct inode *inode);
 void set_nlink(struct inode *inode, unsigned int nlink);
+void inc_nlink(struct inode *inode);
 
 #define I_DIRTY_TIME		(1 << 11)
 #define I_DIRTY_SYNC		(1 << 0)
