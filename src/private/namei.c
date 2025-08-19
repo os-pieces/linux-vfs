@@ -906,6 +906,7 @@ static void __set_nameidata(struct nameidata *p, int dfd, struct filename *name)
 static inline void set_nameidata(struct nameidata *p, int dfd, struct filename *name,
                                  const struct path *root)
 {
+    memset(p, 0, sizeof(struct nameidata));
     __set_nameidata(p, dfd, name);
     p->state = 0;
     if (unlikely(root))
