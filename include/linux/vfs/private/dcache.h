@@ -47,3 +47,6 @@ static inline bool d_flags_negative(unsigned flags)
 }
 
 void d_clear_mounted(struct dentry *dentry);
+
+extern bool d_same_name(const struct dentry *dentry, const struct dentry *parent,
+			const struct qstr *name);

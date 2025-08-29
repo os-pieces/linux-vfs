@@ -58,46 +58,6 @@ int d_unlinked(const struct dentry *dentry)
 	return d_unhashed(dentry) && !IS_ROOT(dentry);
 }
 
-struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
-{
-	unsigned int hash = name->hash;
-	struct hlist_bl_head *b = d_hash(hash);
-	struct hlist_bl_node *node;
-	struct dentry *found = NULL;
-	struct dentry *dentry;
-
-	hlist_bl_for_each_entry_rcu(dentry, node, b, d_hash)
-	{
-
-		if (dentry->d_name.hash != hash)
-			continue;
-		if (dentry->d_parent != parent)
-			goto next;
-		if (d_unhashed(dentry))
-			goto next;
-
-		if (!d_same_name(dentry, parent, name))
-			goto next;
-
-		found = dentry;
-		break;
-	next:
-	}
-
-	return found;
-}
-
-struct dentry *d_lookup(const struct dentry *parent, const struct qstr *name)
-{
-	struct dentry *dentry;
-
-	pr_todo();
-
-	dentry = __d_lookup(parent, name);
-
-	return dentry;
-}
-
 void shrink_dcache_parent(struct dentry *parent)
 {
 	pr_todo();
