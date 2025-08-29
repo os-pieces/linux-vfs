@@ -18,9 +18,9 @@ static inline struct hlist_bl_head *d_hash(unsigned int hash)
 
 void dont_mount(struct dentry *dentry)
 {
-	spin_lock(&dentry->d_lock);
+	d_lock(dentry);
 	dentry->d_flags |= DCACHE_CANT_MOUNT;
-	spin_unlock(&dentry->d_lock);
+	d_unlock(dentry);
 }
 
 /**
@@ -121,10 +121,10 @@ static void __d_rehash(struct dentry *entry)
 }
 
 static inline void __d_set_inode_and_type(struct dentry *dentry,
-					  struct inode *inode,
-					  unsigned type_flags)
+										  struct inode *inode,
+										  unsigned type_flags)
 {
-    unsigned flags;
+	unsigned flags;
 
 	dentry->d_inode = inode;
 	flags = READ_ONCE(dentry->d_flags);
@@ -135,47 +135,47 @@ static inline void __d_set_inode_and_type(struct dentry *dentry,
 
 static unsigned d_flags_for_inode(struct inode *inode)
 {
-    unsigned add_flags = DCACHE_REGULAR_TYPE;
+	unsigned add_flags = DCACHE_REGULAR_TYPE;
 
-    if (inode)
-    {
-        if (S_ISDIR(inode->i_mode))
-        {
-            add_flags = DCACHE_DIRECTORY_TYPE;
-        }
-        else if (S_ISLNK(inode->i_mode))
-        {
-            add_flags = DCACHE_SYMLINK_TYPE;
-        }
-        else if (!S_ISREG(inode->i_mode))
-        {
-            add_flags = DCACHE_SPECIAL_TYPE;
-        }
-    }
-    else
-    {
-        add_flags = DCACHE_MISS_TYPE;
-    }
+	if (inode)
+	{
+		if (S_ISDIR(inode->i_mode))
+		{
+			add_flags = DCACHE_DIRECTORY_TYPE;
+		}
+		else if (S_ISLNK(inode->i_mode))
+		{
+			add_flags = DCACHE_SYMLINK_TYPE;
+		}
+		else if (!S_ISREG(inode->i_mode))
+		{
+			add_flags = DCACHE_SPECIAL_TYPE;
+		}
+	}
+	else
+	{
+		add_flags = DCACHE_MISS_TYPE;
+	}
 
-    return add_flags;
+	return add_flags;
 }
 
 /* inode->i_lock held if inode is non-NULL */
 
 static inline void __d_add(struct dentry *dentry, struct inode *inode)
 {
-	spin_lock(&dentry->d_lock);
+	d_lock(dentry);
 
 	if (inode)
 	{
-        unsigned add_flags = d_flags_for_inode(inode);
+		unsigned add_flags = d_flags_for_inode(inode);
 
-        __d_set_inode_and_type(dentry, inode, add_flags);
+		__d_set_inode_and_type(dentry, inode, add_flags);
 	}
 
 	__d_rehash(dentry);
 
-	spin_unlock(&dentry->d_lock);
+	d_unlock(dentry);
 }
 
 void d_add(struct dentry *entry, struct inode *inode)
@@ -190,14 +190,15 @@ static struct dentry *__d_lookup_rcu_op_compare(
 	const struct qstr *name,
 	unsigned *seqp)
 {
-    pr_todo();
+	pr_todo();
 
 	return NULL;
 }
 
 static inline int dentry_string_cmp(const char *cs, const char *ct, unsigned tcount)
 {
-	do {
+	do
+	{
 		if (*cs != *ct)
 			return 1;
 		cs++;
@@ -332,25 +333,25 @@ struct dentry *__d_lookup_rcu(const struct dentry *parent,
 
 void d_move(struct dentry *dentry, struct dentry *target)
 {
-    pr_todo();
+	pr_todo();
 }
 
 struct dentry *d_find_alias(struct inode *inode)
 {
 	struct dentry *de = NULL;
-    pr_todo();
+	pr_todo();
 	return de;
 }
 
 bool is_subdir(struct dentry *new_dentry, struct dentry *old_dentry)
 {
-    pr_todo();
+	pr_todo();
 	return false;
 }
 
 int d_set_mounted(struct dentry *dentry)
 {
-    pr_todo();
+	pr_todo();
 	dentry->d_flags |= DCACHE_MOUNTED;
 
 	return 0;
@@ -358,32 +359,32 @@ int d_set_mounted(struct dentry *dentry)
 
 void d_clear_mounted(struct dentry *dentry)
 {
-	spin_lock(&dentry->d_lock);
+	d_lock(dentry);
 	dentry->d_flags &= ~DCACHE_MOUNTED;
-	spin_unlock(&dentry->d_lock);
+	d_unlock(dentry);
 }
 
 void dput_to_list(struct dentry *dentry, struct list_head *list)
 {
-    pr_todo();
+	pr_todo();
 }
 
 static void __d_instantiate(struct dentry *dentry, struct inode *inode)
 {
-    unsigned add_flags;
+	unsigned add_flags;
 
-    add_flags = d_flags_for_inode(inode);
-    pr_todo();
-    dentry->d_flags |= add_flags;
-    dentry->d_inode = inode;
+	add_flags = d_flags_for_inode(inode);
+	pr_todo();
+	dentry->d_flags |= add_flags;
+	dentry->d_inode = inode;
 }
 
 void d_instantiate(struct dentry *entry, struct inode *inode)
 {
-    pr_todo();
+	pr_todo();
 
-    if (inode)
-    {
-        __d_instantiate(entry, inode);
-    }
+	if (inode)
+	{
+		__d_instantiate(entry, inode);
+	}
 }

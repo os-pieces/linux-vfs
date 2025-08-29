@@ -10,6 +10,7 @@ src += Glob('src/api/*.c')
 src += Glob('src/libfs/*.c')
 src += Glob('src/private/*.c')
 src += Glob('src/uio/*.c')
+src += Glob('src/dentry/*.c')
 
 group = DefineGroup('vfs', src, depend=['CONFIG_VFS'], CPPPATH=inc)
 

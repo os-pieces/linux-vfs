@@ -4,47 +4,52 @@
 #include <linux/seqlock.h>
 #include <linux/spinlock.h>
 #include <linux/vfs/dcache.h>
+#include <linux/lockref.h>
 
 #define DNAME_INLINE_LEN 20
 
 struct qstr
 {
-	union
-	{
-		struct
-		{
-			u32 hash;
-			u32 len;
-		};
-		u64 hash_len;
-	};
-	const char *name;
+    union
+    {
+        struct
+        {
+            u32 hash;
+            u32 len;
+        };
+        u64 hash_len;
+    };
+    const char *name;
 };
 
 #define QSTR_INIT(n, l) {{{.len = l}}, .name = n}
 
 struct dentry_operations
 {
-	int (*d_revalidate)(struct dentry *, unsigned int);
-	int (*d_hash)(const struct dentry *, struct qstr *);
-	int (*d_compare)(const struct dentry *, unsigned int, const char *, const struct qstr *);
-	int (*d_manage)(const struct path *, bool);
+    int (*d_revalidate)(struct dentry *, unsigned int);
+    int (*d_hash)(const struct dentry *, struct qstr *);
+    int (*d_compare)(const struct dentry *, unsigned int, const char *, const struct qstr *);
+    int (*d_manage)(const struct path *, bool);
 };
 
 struct dentry
 {
-	unsigned int d_flags;
-	char d_iname[DNAME_INLINE_LEN];
-	struct inode *d_inode;
-	const struct dentry_operations *d_op;
-	struct super_block *d_sb; /* The root of the dentry tree */
-	struct qstr d_name;
-	struct list_head d_child;
-	struct list_head d_subdirs;
-	struct dentry *d_parent;
-	struct hlist_bl_node d_hash; /* lookup hash list */
-	seqcount_spinlock_t d_seq;	/* per dentry seqlock */
-	spinlock_t d_lock; /* per dentry lock */
+    unsigned int d_flags;
+    char d_iname[DNAME_INLINE_LEN];
+    struct inode *d_inode;
+    const struct dentry_operations *d_op;
+    struct super_block *d_sb; /* The root of the dentry tree */
+    struct qstr d_name;
+    struct hlist_node d_sib;	  /* child of parent list */
+    struct hlist_head d_children; /* our children */
+    struct dentry *d_parent;
+    struct hlist_bl_node d_hash; /* lookup hash list */
+    seqcount_spinlock_t d_seq;	 /* per dentry seqlock */
+    struct lockref d_lockref;	 /* per-dentry lock and refcount
+                                  * keep separate from RCU lookup area if
+                                  * possible!
+                                  */
+
     void *d_fsdata;
 };
 
@@ -75,40 +80,51 @@ struct dentry
  */
 static inline unsigned __d_entry_type(const struct dentry *dentry)
 {
-	return dentry->d_flags & DCACHE_ENTRY_TYPE;
+    return dentry->d_flags & DCACHE_ENTRY_TYPE;
 }
 
 static inline bool d_can_lookup(const struct dentry *dentry)
 {
-	return __d_entry_type(dentry) == DCACHE_DIRECTORY_TYPE;
+    return __d_entry_type(dentry) == DCACHE_DIRECTORY_TYPE;
 }
 
 static inline int d_in_lookup(const struct dentry *dentry)
 {
-	return dentry->d_flags & DCACHE_PAR_LOOKUP;
+    return dentry->d_flags & DCACHE_PAR_LOOKUP;
 }
 
 static inline bool d_is_autodir(const struct dentry *dentry)
 {
-	return __d_entry_type(dentry) == DCACHE_AUTODIR_TYPE;
+    return __d_entry_type(dentry) == DCACHE_AUTODIR_TYPE;
 }
 
 static inline bool d_is_dir(const struct dentry *dentry)
 {
-	return d_can_lookup(dentry) || d_is_autodir(dentry);
+    return d_can_lookup(dentry) || d_is_autodir(dentry);
 }
 
 extern void dput(struct dentry *);
 extern void d_invalidate(struct dentry *);
 extern void d_lookup_done(struct dentry *dentry);
 extern struct dentry *d_alloc_parallel(struct dentry *, const struct qstr *,
-									   wait_queue_head_t *);
+                                       wait_queue_head_t *);
+extern struct dentry *d_alloc_anon(struct super_block *);
 
 static inline struct inode *d_backing_inode(const struct dentry *upper)
 {
-	struct inode *inode = upper->d_inode;
+    struct inode *inode = upper->d_inode;
 
-	return inode;
+    return inode;
+}
+
+static inline void d_lock(struct dentry *dentry)
+{
+    spin_lock(&dentry->d_lockref.lock);
+}
+
+static inline void d_unlock(struct dentry *dentry)
+{
+    spin_unlock(&dentry->d_lockref.lock);
 }
 
 extern struct dentry *d_alloc(struct dentry *, const struct qstr *);
@@ -129,7 +145,7 @@ bool d_is_positive(const struct dentry *dentry);
  */
 static inline struct inode *d_inode(const struct dentry *dentry)
 {
-	return dentry->d_inode;
+    return dentry->d_inode;
 }
 
 /**
@@ -147,33 +163,24 @@ static inline struct inode *d_inode(const struct dentry *dentry)
  */
 static inline bool d_really_is_positive(const struct dentry *dentry)
 {
-	return dentry->d_inode != NULL;
+    return dentry->d_inode != NULL;
 }
 
 static inline bool d_is_symlink(const struct dentry *dentry)
 {
-	return __d_entry_type(dentry) == DCACHE_SYMLINK_TYPE;
+    return __d_entry_type(dentry) == DCACHE_SYMLINK_TYPE;
 }
 
 struct dentry *d_splice_alias(struct inode *inode, struct dentry *dentry);
 
-static inline void d_lock(struct dentry *dentry)
-{
-    pr_todo();
-}
-
-static inline void d_unlock(struct dentry *dentry)
-{
-    
-}
-
 static inline struct dentry *dget_dlock(struct dentry *dentry)
 {
-	//TODO dentry->d_lockref.count++;
-	return dentry;
+    dentry->d_lockref.count++;
+
+    return dentry;
 }
 
-#define d_set_fsdata(d, v) ((d)->d_fsdata = (void*)(v))
+#define d_set_fsdata(d, v) ((d)->d_fsdata = (void *)(v))
 
 struct dentry *d_alloc_name(struct dentry *parent, const char *name);
 
