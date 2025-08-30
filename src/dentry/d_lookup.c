@@ -24,32 +24,43 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
     struct dentry *found = NULL;
     struct dentry *dentry;
 
-    hlist_bl_for_each_entry_rcu(dentry, node, b, d_hash)
-    {
+    dcache_rlock(&_dcache);
 
+    hlist_bl_for_each_entry(dentry, node, b, d_hash)
+    {
         if (dentry->d_name.hash != hash)
             continue;
         if (dentry->d_parent != parent)
-            goto next;
+            continue;
         if (d_unhashed(dentry))
-            goto next;
+            continue;
 
         if (!d_same_name(dentry, parent, name))
-            goto next;
+            continue;
 
         found = dentry;
         break;
-    next:
     }
+
+    dcache_runlock(&_dcache);
 
     return found;
 }
 
+/**
+ * d_lookup - search for a dentry
+ * @parent: parent dentry
+ * @name: qstr of name we wish to find
+ * Returns: dentry, or NULL
+ *
+ * d_lookup searches the children of the parent dentry for the name in
+ * question. If the dentry is found its reference count is incremented and the
+ * dentry is returned. The caller must use dput to free the entry when it has
+ * finished using it. %NULL is returned if the dentry does not exist.
+ */
 struct dentry *d_lookup(const struct dentry *parent, const struct qstr *name)
 {
     struct dentry *dentry;
-
-    pr_todo();
 
     dentry = __d_lookup(parent, name);
 
