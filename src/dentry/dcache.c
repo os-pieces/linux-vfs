@@ -65,12 +65,21 @@ void shrink_dcache_parent(struct dentry *parent)
 
 int dcache_init(struct dcache *c, unsigned count)
 {
-    c->hashtable = kcalloc(count, sizeof(struct hlist_bl_head), 0);
-    c->hash_shift = 32 - __ilog2_u32(count);
+    int err = 0;
 
-    init_rwsem(&c->lock);
+    c->hashtable = kcalloc(count, sizeof(struct hlist_bl_head), GFP_KERNEL);
+    if (c->hashtable)
+    {
+        c->hash_shift = 32 - __ilog2_u32(count);
 
-    return 0;
+        init_rwsem(&c->lock);
+    }
+    else
+    {
+        err = -ENOMEM;
+    }
+
+    return err;
 }
 
 static void __d_rehash(struct dentry *entry)
