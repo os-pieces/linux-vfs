@@ -2,7 +2,7 @@
 #include <linux/vfs/private/filename.h>
 #include <linux/vfs/private/namei.h>
 
-#define EMBEDDED_NAME_MAX    200//TODO
+#define EMBEDDED_NAME_MAX 128
 
 struct filename *__getname0(void)
 {
@@ -14,20 +14,16 @@ void putname(struct filename *n)
     pr_todo();
 }
 
-struct filename *getname_flags(const char __user *filename, 
-                               int flags, int *empty)
+int getname_flags(const char __user *filename,
+                  int flags, int *empty, struct filename **res)
 {
     struct filename *result;
     char *kname;
     int len;
 
-    result = audit_reusename(filename);
-    if (result)
-        return result;
-
     result = __getname0();
     if (unlikely(!result))
-        return ERR_PTR(-ENOMEM);
+        return -ENOMEM;
 
     /*
      * First, try to embed the struct filename inside the names_cache
@@ -40,7 +36,7 @@ struct filename *getname_flags(const char __user *filename,
     if (unlikely(len < 0))
     {
         __putname(result);
-        return ERR_PTR(len);
+        return len;
     }
 
     /*
@@ -63,7 +59,7 @@ struct filename *getname_flags(const char __user *filename,
         if (unlikely(!result))
         {
             __putname(kname);
-            return ERR_PTR(-ENOMEM);
+            return -ENOMEM;
         }
         result->name = kname;
         len = strncpy_from_user(kname, filename, PATH_MAX);
@@ -71,13 +67,13 @@ struct filename *getname_flags(const char __user *filename,
         {
             __putname(kname);
             kfree(result);
-            return ERR_PTR(len);
+            return len;
         }
         if (unlikely(len == PATH_MAX))
         {
             __putname(kname);
             kfree(result);
-            return ERR_PTR(-ENAMETOOLONG);
+            return -ENAMETOOLONG;
         }
     }
 
@@ -90,23 +86,24 @@ struct filename *getname_flags(const char __user *filename,
         if (!(flags & LOOKUP_EMPTY))
         {
             putname(result);
-            return ERR_PTR(-ENOENT);
+            return -ENOENT;
         }
     }
 
     result->uptr = filename;
     result->aname = NULL;
-    // TODO audit_getname(result);
-    return result;
+    *res = result;
+
+    return 0;
 }
 
-struct filename *getname(const char __user *filename)
+int getname(const char __user *name, struct filename **res)
 {
-    return getname_flags(filename, 0, NULL);
+    return getname_flags(name, 0, NULL, res);
 }
 
 int filename_get(const char *name)
 {
-    
+
     return 0;
 }

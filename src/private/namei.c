@@ -155,7 +155,7 @@ static bool __follow_mount_rcu(struct nameidata *nd, struct path *path)
 
             ret = !(flags & DCACHE_NEED_AUTOMOUNT);
 
-            break; 
+            break;
         }
     }
 
@@ -1096,18 +1096,20 @@ void namei_init(struct nameiargs *ni, struct filedesc *fdp, const char *namep,
 
 int namei_create(struct nameiargs *ni)
 {
-    int error;
     struct filename *pathname;
     struct nameidata nd;
+    int error;
 
-    pathname = getname(ni->ni_name);
+    error = getname(ni->ni_name, &pathname);
+    if (error == 0)
+    {
+        set_nameidata(&nd, ni->ni_atfd, pathname, NULL);
+        nd.filedesc = ni->ni_fdp;
 
-    set_nameidata(&nd, ni->ni_atfd, pathname, NULL);
-    nd.filedesc = ni->ni_fdp;
+        error = __namei_create(&nd, &ni->ni_ret_parent, ni->ni_lookflags, &ni->ni_ret_dentry);
 
-    error = __namei_create(&nd, &ni->ni_ret_parent, ni->ni_lookflags, &ni->ni_ret_dentry);
-
-    putname(pathname);
+        putname(pathname);
+    }
 
     return error;
 }
@@ -1393,23 +1395,25 @@ static int __namei_path_openat(struct nameidata *nd,
 
 int namei_open(struct nameiargs *ni, struct open_flags *op)
 {
-    int error;
     struct filename *pathname;
     struct nameidata nd;
     int flags = op->lookup_flags;
+    int error;
 
-    pathname = getname(ni->ni_name);
+    error = getname(ni->ni_name, &pathname);
+    if (error == 0)
+    {
+        set_nameidata(&nd, ni->ni_atfd, pathname, NULL);
+        nd.filedesc = ni->ni_fdp;
 
-    set_nameidata(&nd, ni->ni_atfd, pathname, NULL);
-    nd.filedesc = ni->ni_fdp;
+        error = __namei_path_openat(&nd, op, flags | LOOKUP_RCU);
+        if (unlikely(error == -ECHILD))
+            error = __namei_path_openat(&nd, op, flags);
+        if (unlikely(error == -ESTALE))
+            error = __namei_path_openat(&nd, op, flags | LOOKUP_REVAL);
 
-    error = __namei_path_openat(&nd, op, flags | LOOKUP_RCU);
-    if (unlikely(error == -ECHILD))
-        error = __namei_path_openat(&nd, op, flags);
-    if (unlikely(error == -ESTALE))
-        error = __namei_path_openat(&nd, op, flags | LOOKUP_REVAL);
-
-    putname(pathname);
+        putname(pathname);
+    }
 
     return error;
 }
@@ -1417,56 +1421,62 @@ int namei_open(struct nameiargs *ni, struct open_flags *op)
 int namei_lookup(struct nameiargs *ni)
 {
     struct filename *name;
-    int retval;
+    int error;
 
-    name = getname(ni->ni_name);
+    error = getname(ni->ni_name, &name);
+    if (error == 0)
+    {
+        error = __filename_lookup(ni->ni_fdp, ni->ni_atfd, name, ni->ni_lookflags, &ni->ni_ret_parent, NULL);
 
-    retval = __filename_lookup(ni->ni_fdp, ni->ni_atfd, name, ni->ni_lookflags, &ni->ni_ret_parent, NULL);
+        putname(name);
+    }
 
-    putname(name);
-
-    return retval;
+    return error;
 }
 
 int vfs_path_parent_lookup(struct nameiargs *ni, struct qstr *last, int *type,
                            const struct path *root)
 {
-    int retval;
     struct filename *pathname;
-    struct nameidata nd;
-    int flags = ni->ni_lookflags;
     struct path *parent = &ni->ni_ret_parent;
+    struct nameidata nd;
+    int error;
+    int flags = ni->ni_lookflags;
 
-    pathname = getname(ni->ni_name);
-
-    set_nameidata(&nd, ni->ni_atfd, pathname, root);
-    nd.filedesc = ni->ni_fdp;
-
-    retval = path_parentat(&nd, flags | LOOKUP_RCU, parent);
-    if (unlikely(retval == -ECHILD))
-        retval = path_parentat(&nd, flags, parent);
-    if (unlikely(retval == -ESTALE))
-        retval = path_parentat(&nd, flags | LOOKUP_REVAL, parent);
-
-    if (likely(!retval))
+    error = getname(ni->ni_name, &pathname);
+    if (error == 0)
     {
-        *last = nd.last;
-        *type = nd.last_type;
+        set_nameidata(&nd, ni->ni_atfd, pathname, root);
+        nd.filedesc = ni->ni_fdp;
+
+        error = path_parentat(&nd, flags | LOOKUP_RCU, parent);
+        if (unlikely(error == -ECHILD))
+            error = path_parentat(&nd, flags, parent);
+        if (unlikely(error == -ESTALE))
+            error = path_parentat(&nd, flags | LOOKUP_REVAL, parent);
+
+        if (likely(!error))
+        {
+            *last = nd.last;
+            *type = nd.last_type;
+        }
     }
 
-    return retval;
+    return error;
 }
 
 int kern_path(filedesc_t *fdp, const char *name, unsigned int flags, struct path *path)
 {
     struct filename *filename;
-    int ret;
+    int error;
 
-    filename = getname(name);
+    error = getname(name, &filename);
+    if (error == 0)
+    {
+        error = __filename_lookup(fdp, AT_FDCWD, filename, flags, path, NULL);
 
-    ret = __filename_lookup(fdp, AT_FDCWD, filename, flags, path, NULL);
+        putname(filename);
+    }
 
-    putname(filename);
-
-    return ret;
+    return error;
 }

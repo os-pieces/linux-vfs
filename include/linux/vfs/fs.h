@@ -106,7 +106,8 @@ extern int unregister_filesystem(struct file_system_type *);
 /* called from RCU mode, don't block */
 #define MAY_NOT_BLOCK 0x00000080
 
-extern struct filename *getname(const char __user *);
+extern int getname(const char __user *name, struct filename **res);
+
 extern struct file_system_type *get_fs_type(const char *name);
 extern void iput(struct inode *);
 

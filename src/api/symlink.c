@@ -27,20 +27,22 @@ static int do_symlinkat(filedesc_t *fdp, const char *oldname,
     struct nameiargs ni;
     struct filename *from;
 
-    from = getname(oldname);
-
-    namei_init(&ni, fdp, newname, atfd, 0);
-
-    error = namei_create(&ni);
+    error = getname(oldname, &from);
     if (error == 0)
     {
-        struct mnt_idmap *idmap = mnt_idmap(ni.ni_ret_parent.mnt);
+        namei_init(&ni, fdp, newname, atfd, 0);
 
-        error = vfs_symlink(idmap, ni.ni_ret_parent.dentry->d_inode,
-                            ni.ni_ret_dentry, from->name);
+        error = namei_create(&ni);
+        if (error == 0)
+        {
+            struct mnt_idmap *idmap = mnt_idmap(ni.ni_ret_parent.mnt);
+
+            error = vfs_symlink(idmap, ni.ni_ret_parent.dentry->d_inode,
+                                ni.ni_ret_dentry, from->name);
+        }
+
+        putname(from);
     }
-
-    putname(from);
 
     return error;
 }
