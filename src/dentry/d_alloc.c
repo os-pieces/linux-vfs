@@ -22,6 +22,7 @@ static struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
     pr_todo();
     dname = dentry->d_iname;
 
+    lockref_init(&dentry->d_lockref);
     seqcount_spinlock_init(&dentry->d_seq, &dentry->d_lockref.lock);
 
     dentry->d_parent = dentry;

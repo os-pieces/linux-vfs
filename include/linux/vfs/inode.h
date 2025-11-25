@@ -50,10 +50,10 @@ struct inode_operations
 				   const char *);
 	int (*rename)(struct mnt_idmap *, struct inode *, struct dentry *,
 				  struct inode *, struct dentry *, unsigned int);
-	int (*setattr) (struct mnt_idmap *, struct dentry *, struct iattr *);
-	int (*getattr) (struct mnt_idmap *, const struct path *,
-			struct kstat *, u32, unsigned int);
-	const char * (*get_link) (struct dentry *, struct inode *, struct delayed_call *);
+	int (*setattr)(struct mnt_idmap *, struct dentry *, struct iattr *);
+	int (*getattr)(struct mnt_idmap *, const struct path *,
+				   struct kstat *, u32, unsigned int);
+	const char *(*get_link)(struct dentry *, struct inode *, struct delayed_call *);
 	int (*update_time)(struct inode *, int);
 };
 
@@ -61,8 +61,8 @@ struct inode
 {
 	umode_t i_mode;
 	unsigned short i_flags;
-	kuid_t			i_uid;
-	kgid_t			i_gid;
+	kuid_t i_uid;
+	kgid_t i_gid;
 	const struct inode_operations *i_op;
 	struct super_block *i_sb;
 	union
@@ -83,7 +83,7 @@ struct inode
 		void *i_cdev;
 	};
 
-	spinlock_t i_lock;	/* i_blocks, i_bytes, maybe i_size */
+	spinlock_t i_lock; /* i_blocks, i_bytes, maybe i_size */
 
 	unsigned long i_state;
 	atomic_t i_count;
@@ -91,13 +91,13 @@ struct inode
 
 	unsigned long i_ino;
 
-	struct rw_semaphore	i_rwsem;
-	blkcnt_t		i_blocks;
-	__u32			i_generation;
+	struct rw_semaphore i_rwsem;
+	blkcnt_t i_blocks;
+	__u32 i_generation;
 	u64 i_version;
-    u8 i_blkbits;
-	struct address_space	*i_mapping;
-	dev_t			i_rdev;
+	u8 i_blkbits;
+	struct address_space *i_mapping;
+	dev_t i_rdev;
 };
 
 /*
@@ -139,8 +139,8 @@ void clear_nlink(struct inode *inode);
 void set_nlink(struct inode *inode, unsigned int nlink);
 void inc_nlink(struct inode *inode);
 
-#define I_DIRTY_TIME		(1 << 11)
-#define I_DIRTY_SYNC		(1 << 0)
+#define I_DIRTY_TIME (1 << 11)
+#define I_DIRTY_SYNC (1 << 0)
 
 extern void __mark_inode_dirty(struct inode *, int);
 
@@ -149,43 +149,43 @@ loff_t i_size_read(const struct inode *inode);
 int inode_needs_sync(struct inode *inode);
 
 static inline struct timespec64 inode_set_atime_to_ts(struct inode *inode,
-						      struct timespec64 ts)
+													  struct timespec64 ts)
 {
-	//TODO inode->__i_atime = ts;
+	// TODO inode->__i_atime = ts;
 	return ts;
 }
 
 static inline struct timespec64 inode_set_mtime_to_ts(struct inode *inode,
-						      struct timespec64 ts)
+													  struct timespec64 ts)
 {
-	//inode->__i_mtime = ts;
+	// inode->__i_mtime = ts;
 	return ts;
 }
 
 static inline struct timespec64 inode_set_ctime_to_ts(struct inode *inode,
-						      struct timespec64 ts)
+													  struct timespec64 ts)
 {
-//	inode->__i_ctime = ts;
+	//	inode->__i_ctime = ts;
 	return ts;
 }
 
 static inline struct timespec64 inode_get_atime(const struct inode *inode)
 {
-    struct timespec64 a;
-    return a;//inode->__i_atime;
+	struct timespec64 a;
+	return a; // inode->__i_atime;
 }
 
 static inline struct timespec64 inode_get_mtime(const struct inode *inode)
 {
-    struct timespec64 a;
-    return a;//inode->__i_atime;
+	struct timespec64 a;
+	return a; // inode->__i_atime;
 }
 
 static inline struct timespec64 inode_set_ctime(struct inode *inode,
-						time64_t sec, long nsec)
+												time64_t sec, long nsec)
 {
-	struct timespec64 ts = { .tv_sec  = sec,
-				 .tv_nsec = nsec };
+	struct timespec64 ts = {.tv_sec = sec,
+							.tv_nsec = nsec};
 
 	return inode_set_ctime_to_ts(inode, ts);
 }

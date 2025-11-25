@@ -30,6 +30,9 @@ struct dentry_operations
     int (*d_hash)(const struct dentry *, struct qstr *);
     int (*d_compare)(const struct dentry *, unsigned int, const char *, const struct qstr *);
     int (*d_manage)(const struct path *, bool);
+    int (*d_delete)(const struct dentry *);
+    void (*d_prune)(struct dentry *);
+    void (*d_release)(struct dentry *);
 };
 
 struct dentry
@@ -40,12 +43,12 @@ struct dentry
     const struct dentry_operations *d_op;
     struct super_block *d_sb; /* The root of the dentry tree */
     struct qstr d_name;
-    struct hlist_node d_sib;	  /* child of parent list */
+    struct hlist_node d_sib;      /* child of parent list */
     struct hlist_head d_children; /* our children */
     struct dentry *d_parent;
     struct hlist_bl_node d_hash; /* lookup hash list */
-    seqcount_spinlock_t d_seq;	 /* per dentry seqlock */
-    struct lockref d_lockref;	 /* per-dentry lock and refcount
+    seqcount_spinlock_t d_seq;   /* per dentry seqlock */
+    struct lockref d_lockref;    /* per-dentry lock and refcount
                                   * keep separate from RCU lookup area if
                                   * possible!
                                   */
@@ -53,25 +56,69 @@ struct dentry
     void *d_fsdata;
 };
 
+/*
+ * dentry->d_lock spinlock nesting subclasses:
+ *
+ * 0: normal
+ * 1: nested
+ */
+enum dentry_d_lock_class
+{
+    DENTRY_D_LOCK_NORMAL, /* implicitly used by plain spin_lock() APIs. */
+    DENTRY_D_LOCK_NESTED
+};
+
 /* d_flags entries */
-#define DCACHE_OP_HASH 0x00000001
-#define DCACHE_OP_COMPARE 0x00000002
-#define DCACHE_OP_REVALIDATE 0x00000004
-#define DCACHE_OP_DELETE 0x00000008
-#define DCACHE_OP_PRUNE 0x00000010
-
-#define DCACHE_ENTRY_TYPE 0x00700000
-#define DCACHE_MISS_TYPE 0x00000000		 /* Negative dentry (maybe fallthru to nowhere) */
-#define DCACHE_WHITEOUT_TYPE 0x00100000	 /* Whiteout dentry (stop pathwalk) */
-#define DCACHE_DIRECTORY_TYPE 0x00200000 /* Normal directory */
-#define DCACHE_AUTODIR_TYPE 0x00300000	 /* Lookupless directory (presumed automount) */
-#define DCACHE_REGULAR_TYPE 0x00400000	 /* Regular file type (or fallthru to such) */
-#define DCACHE_SPECIAL_TYPE 0x00500000	 /* Other file type (or fallthru to such) */
-#define DCACHE_SYMLINK_TYPE 0x00600000	 /* Symlink (or fallthru to such) */
-
-#define DCACHE_PAR_LOOKUP 0x10000000 /* being looked up (with parent locked shared) */
-#define DCACHE_DENTRY_CURSOR 0x20000000
-#define DCACHE_NORCU 0x40000000 /* No RCU delay for freeing */
+enum dentry_flags
+{
+    DCACHE_OP_HASH = BIT(0),
+    DCACHE_OP_COMPARE = BIT(1),
+    DCACHE_OP_REVALIDATE = BIT(2),
+    DCACHE_OP_DELETE = BIT(3),
+    DCACHE_OP_PRUNE = BIT(4),
+    /*
+     * This dentry is possibly not currently connected to the dcache tree,
+     * in which case its parent will either be itself, or will have this
+     * flag as well.  nfsd will not use a dentry with this bit set, but will
+     * first endeavour to clear the bit either by discovering that it is
+     * connected, or by performing lookup operations.  Any filesystem which
+     * supports nfsd_operations MUST have a lookup function which, if it
+     * finds a directory inode with a DCACHE_DISCONNECTED dentry, will
+     * d_move that dentry into place and return that dentry rather than the
+     * passed one, typically using d_splice_alias.
+     */
+    DCACHE_DISCONNECTED = BIT(5),
+    DCACHE_REFERENCED = BIT(6), /* Recently used, don't discard. */
+    DCACHE_DONTCACHE = BIT(7),  /* Purge from memory on final dput() */
+    DCACHE_CANT_MOUNT = BIT(8),
+    DCACHE_GENOCIDE = BIT(9),
+    DCACHE_SHRINK_LIST = BIT(10),
+    DCACHE_OP_WEAK_REVALIDATE = BIT(11),
+    /*
+     * this dentry has been "silly renamed" and has to be deleted on the
+     * last dput()
+     */
+    DCACHE_NFSFS_RENAMED = BIT(12),
+    DCACHE_FSNOTIFY_PARENT_WATCHED = BIT(13), /* Parent inode is watched by some fsnotify listener */
+    DCACHE_DENTRY_KILLED = BIT(14),
+    DCACHE_MOUNTED = BIT(15),        /* is a mountpoint */
+    DCACHE_NEED_AUTOMOUNT = BIT(16), /* handle automount on this dir */
+    DCACHE_MANAGE_TRANSIT = BIT(17), /* manage transit from this dirent */
+    DCACHE_LRU_LIST = BIT(18),
+    DCACHE_ENTRY_TYPE = (7 << 19),     /* bits 19..21 are for storing type: */
+    DCACHE_MISS_TYPE = (0 << 19),      /* Negative dentry */
+    DCACHE_WHITEOUT_TYPE = (1 << 19),  /* Whiteout dentry (stop pathwalk) */
+    DCACHE_DIRECTORY_TYPE = (2 << 19), /* Normal directory */
+    DCACHE_AUTODIR_TYPE = (3 << 19),   /* Lookupless directory (presumed automount) */
+    DCACHE_REGULAR_TYPE = (4 << 19),   /* Regular file type */
+    DCACHE_SPECIAL_TYPE = (5 << 19),   /* Other file type */
+    DCACHE_SYMLINK_TYPE = (6 << 19),   /* Symlink */
+    DCACHE_NOKEY_NAME = BIT(22),       /* Encrypted name encoded without key */
+    DCACHE_OP_REAL = BIT(23),
+    DCACHE_PAR_LOOKUP = BIT(24), /* being looked up (with parent locked shared) */
+    DCACHE_DENTRY_CURSOR = BIT(25),
+    DCACHE_NORCU = BIT(26), /* No RCU delay for freeing */
+};
 
 #define IS_ROOT(x) ((x) == (x)->d_parent)
 
@@ -120,6 +167,11 @@ static inline struct inode *d_backing_inode(const struct dentry *upper)
 static inline void d_lock(struct dentry *dentry)
 {
     spin_lock(&dentry->d_lockref.lock);
+}
+
+static inline void d_lock_nested(struct dentry *dentry, int subclass)
+{
+    spin_lock_nested(&dentry->d_lockref.lock, subclass);
 }
 
 static inline void d_unlock(struct dentry *dentry)

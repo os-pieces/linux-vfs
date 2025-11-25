@@ -359,3 +359,8 @@ void d_instantiate(struct dentry *entry, struct inode *inode)
         __d_instantiate(entry, inode);
     }
 }
+
+void __d_drop(struct dentry *dentry)
+{
+    pr_todo();
+}
