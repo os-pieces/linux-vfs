@@ -1,4 +1,5 @@
 #include <linux/vfs/fs.h>
+#include <linux/vfs/private/dcache.h>
 
 static void d_lru_add(struct dentry *dentry)
 {

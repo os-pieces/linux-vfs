@@ -15,6 +15,9 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
 	struct super_block *s = kzalloc(sizeof(struct super_block),  GFP_USER);
 
 	INIT_LIST_HEAD(&s->s_mounts);
+	INIT_LIST_HEAD(&s->s_inodes);
+	spin_lock_init(&s->s_inode_list_lock);
+
     pr_todo();
 
 	return s;

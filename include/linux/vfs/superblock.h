@@ -6,21 +6,21 @@
  * sb->s_flags.  Note that these mirror the equivalent MS_* flags where
  * represented in both.
  */
-#define SB_RDONLY BIT(0)	  /* Mount read-only */
-#define SB_NOSUID BIT(1)	  /* Ignore suid and sgid bits */
-#define SB_NODEV BIT(2)		  /* Disallow access to device special files */
-#define SB_NOEXEC BIT(3)	  /* Disallow program execution */
+#define SB_RDONLY BIT(0)      /* Mount read-only */
+#define SB_NOSUID BIT(1)      /* Ignore suid and sgid bits */
+#define SB_NODEV BIT(2)       /* Disallow access to device special files */
+#define SB_NOEXEC BIT(3)      /* Disallow program execution */
 #define SB_SYNCHRONOUS BIT(4) /* Writes are synced at once */
-#define SB_MANDLOCK BIT(6)	  /* Allow mandatory locks on an FS */
-#define SB_DIRSYNC BIT(7)	  /* Directory modifications are synchronous */
-#define SB_NOATIME BIT(10)	  /* Do not update access times. */
+#define SB_MANDLOCK BIT(6)    /* Allow mandatory locks on an FS */
+#define SB_DIRSYNC BIT(7)     /* Directory modifications are synchronous */
+#define SB_NOATIME BIT(10)    /* Do not update access times. */
 #define SB_NODIRATIME BIT(11) /* Do not update directory access times */
 #define SB_SILENT BIT(15)
-#define SB_POSIXACL BIT(16)	   /* Supports POSIX ACLs */
+#define SB_POSIXACL BIT(16)    /* Supports POSIX ACLs */
 #define SB_INLINECRYPT BIT(17) /* Use blk-crypto for encrypted files */
 #define SB_KERNMOUNT BIT(22)   /* this is a kern_mount call */
 #define SB_I_VERSION BIT(23)   /* Update inode I_version field */
-#define SB_LAZYTIME BIT(25)	   /* Update the on-disk [acm]times lazily */
+#define SB_LAZYTIME BIT(25)    /* Update the on-disk [acm]times lazily */
 
 /* These sb flags are internal to the kernel */
 #define SB_DEAD BIT(21)
@@ -45,9 +45,9 @@ struct super_operations
 struct super_block
 {
     const struct super_operations *s_op;
-    struct list_head s_mounts;				/* list of mounts; _not_ for fs use */
+    struct list_head s_mounts;              /* list of mounts; _not_ for fs use */
     const struct dentry_operations *s_d_op; /* default d_op for dentries */
-    void *s_fs_info;						/* Filesystem private info */
+    void *s_fs_info;                        /* Filesystem private info */
     struct rw_semaphore s_umount;
     dev_t s_dev; /* search index; _not_ kdev_t */
     struct dentry *s_root;
@@ -58,19 +58,23 @@ struct super_block
     unsigned long s_blocksize;
     int s_maxbytes;
     struct backing_dev_info *s_bdi;
-    struct block_device	*s_bdev;
+    struct block_device *s_bdev;
     int s_magic;
-    u32			s_time_gran;
-    u32			s_time_min;
-    u32			s_time_max;
+    u32 s_time_gran;
+    u32 s_time_min;
+    u32 s_time_max;
     const struct export_operations *s_export_op;
+
+    /* s_inode_list_lock protects s_inodes */
+    spinlock_t s_inode_list_lock;
+    struct list_head s_inodes; /* all inodes */
 };
 
 void kill_litter_super(struct super_block *sb);
 void kill_block_super(struct super_block *sb);
 
 int sb_issue_discard(struct super_block *sb, sector_t block,
-		sector_t nr_blocks, gfp_t gfp_mask, unsigned long flags);
+                     sector_t nr_blocks, gfp_t gfp_mask, unsigned long flags);
 
 extern int sync_filesystem(struct super_block *);
 

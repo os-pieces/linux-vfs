@@ -83,6 +83,8 @@ struct inode
 		void *i_cdev;
 	};
 
+	struct list_head i_sb_list;
+
 	spinlock_t i_lock; /* i_blocks, i_bytes, maybe i_size */
 
 	unsigned long i_state;

@@ -5,6 +5,7 @@
 int inode_init_always(struct super_block *sb, struct inode *inode)
 {
     inode->i_sb = sb;
+    init_rwsem(&inode->i_rwsem);
 
     pr_todo();
 
@@ -38,16 +39,6 @@ static struct inode *alloc_inode(struct super_block *sb)
     return inode;
 }
 
-void inode_lock_shared(struct inode *inode)
-{
-    pr_todo();
-}
-
-void inode_unlock_shared(struct inode *inode)
-{
-    pr_todo();
-}
-
 struct inode *new_inode_pseudo(struct super_block *sb)
 {
     struct inode *inode = alloc_inode(sb);
@@ -68,12 +59,21 @@ struct inode *new_inode(struct super_block *sb)
     inode = new_inode_pseudo(sb);
     if (inode)
         inode_sb_list_add(inode);
+
     return inode;
 }
 
+/**
+ * inode_sb_list_add - add inode to the superblock list of inodes
+ * @inode: inode to add
+ */
 void inode_sb_list_add(struct inode *inode)
 {
-    pr_todo();
+	struct super_block *sb = inode->i_sb;
+
+	spin_lock(&sb->s_inode_list_lock);
+	list_add(&inode->i_sb_list, &sb->s_inodes);
+	spin_unlock(&sb->s_inode_list_lock);
 }
 
 void inc_nlink(struct inode *inode)
@@ -86,9 +86,19 @@ void iput(struct inode *inode)
     pr_todo();
 }
 
+void inode_lock_shared(struct inode *inode)
+{
+    down_read(&inode->i_rwsem);
+}
+
+void inode_unlock_shared(struct inode *inode)
+{
+    up_read(&inode->i_rwsem);
+}
+
 void inode_lock_nested(struct inode *inode, unsigned subclass)
 {
-    pr_todo();
+    down_write_nested(&inode->i_rwsem, subclass);
 }
 
 void ihold(struct inode *inode)
@@ -99,12 +109,12 @@ void ihold(struct inode *inode)
 
 void inode_lock(struct inode *inode)
 {
-	pr_todo();
+	down_write(&inode->i_rwsem);
 }
 
 void inode_unlock(struct inode *inode)
 {
-	pr_todo();
+	up_write(&inode->i_rwsem);
 }
 
 void touch_atime(const struct path *path)
@@ -185,7 +195,7 @@ struct inode *igrab(struct inode *inode)
 
 void insert_inode_hash(struct inode *inode)
 {
-    
+    pr_todo();
 }
 
 void inode_init_once(struct inode *inode)
