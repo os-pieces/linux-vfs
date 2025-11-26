@@ -23,13 +23,3 @@ void path_put(const struct path *path)
     dput(path->dentry);
     mntput(path->mnt);
 }
-
-void __putname(void *ptr)
-{
-    pr_todo();
-}
-
-void* __getname(void)
-{
-    return kmalloc(128, 0);
-}

@@ -9,7 +9,6 @@
 #include <linux/wait.h>
 #include <linux/kernel.h>
 #include <linux/rcupdate.h>
-#include <linux/limits.h>
 #include <linux/stdlib.h>
 #include <linux/vfs/audit.h>
 #include <linux/bug.h>
@@ -36,6 +35,7 @@
 
 #include <linux/pagemap.h>
 
+#include <linux/vfs/limits.h>
 #include <linux/vfs/statfs.h>
 #include <linux/vfs/inode.h>
 #include <linux/vfs/dentry.h>
@@ -165,9 +165,6 @@ enum file_time_flags
 };
 
 static inline bool sb_rdonly(const struct super_block *sb) { return sb->s_flags & SB_RDONLY; }
-
-void *__getname(void);
-void __putname(void *ptr);
 
 /*
  * This must be used for allocating filesystems specific inodes to set
