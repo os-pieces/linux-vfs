@@ -37,7 +37,10 @@ struct file *alloc_empty_file(int flags)
 
 void fput(struct file *file)
 {
-    pr_todo();
+    if (unlikely(file_ref_put(&file->f_ref)))
+    {
+        pr_todo();
+    }
 }
 
 void __fput_sync(struct file *file)
@@ -47,6 +50,30 @@ void __fput_sync(struct file *file)
 
 void file_accessed(struct file *file)
 {
+}
+
+static bool __file_ref_put_badval(file_ref_t *ref, unsigned int cnt)
+{
+    /*
+     * If the reference count was already in the dead zone, then this
+     * put() operation is imbalanced. Warn, put the reference count back to
+     * DEAD and tell the caller to not deconstruct the object.
+     */
+    if (WARN_ONCE(cnt >= FILE_REF_RELEASED, "imbalanced put on file reference count"))
+    {
+        atomic_set(&ref->refcnt, FILE_REF_DEAD);
+        return false;
+    }
+
+    /*
+     * This is a put() operation on a saturated refcount. Restore the
+     * mean saturation value and tell the caller to not deconstruct the
+     * object.
+     */
+    if (cnt > FILE_REF_MAXREF)
+        atomic_set(&ref->refcnt, FILE_REF_SATURATED);
+
+    return false;
 }
 
 /**
@@ -68,8 +95,30 @@ void file_accessed(struct file *file)
  */
 bool __file_ref_put(file_ref_t *ref, unsigned int cnt)
 {
-    pr_todo();
-    return true;
+    /* Did this drop the last reference? */
+    if (likely(cnt == FILE_REF_NOREF))
+    {
+        /*
+         * Carefully try to set the reference count to FILE_REF_DEAD.
+         *
+         * This can fail if a concurrent get() operation has
+         * elevated it again or the corresponding put() even marked
+         * it dead already. Both are valid situations and do not
+         * require a retry. If this fails the caller is not
+         * allowed to deconstruct the object.
+         */
+        if (!atomic_try_cmpxchg_release(&ref->refcnt, &cnt, FILE_REF_DEAD))
+            return false;
+
+        /*
+         * The caller can safely schedule the object for
+         * deconstruction. Provide acquire ordering.
+         */
+        smp_acquire__after_ctrl_dep();
+        return true;
+    }
+
+    return __file_ref_put_badval(ref, cnt);
 }
 
 /*
