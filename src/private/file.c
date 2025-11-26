@@ -5,15 +5,17 @@ int __fget_light(filedesc_t *fdp, unsigned int fd,  struct fd *f, fmode_t mask)
 {
     int error = 0;
 
+    spin_lock(&fdp->lock);
     f->file = filedesc_file_get(fdp, fd, false);
     if (f->file)
     {
-
+        get_file(f->file);
     }
     else
     {
         error = -EBADF;
     }
+    spin_unlock(&fdp->lock);
 
     return error;
 }

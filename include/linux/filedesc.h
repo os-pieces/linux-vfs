@@ -1,6 +1,7 @@
 #pragma once
 
 #include <linux/types.h>
+#include <linux/spinlock_types.h>
 
 #define NR_OPEN_DEFAULT 32
 
@@ -32,6 +33,7 @@ struct filedesc
     filedesc_path_t pwd;
     filedesc_path_t root;
 
+    spinlock_t lock;
     struct fdtable fdt_default;
     void *file_default[NR_OPEN_DEFAULT];
     bool is_user;

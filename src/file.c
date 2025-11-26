@@ -3,11 +3,24 @@
 #include <linux/vfs/private/file.h>
 #include <linux/vfs/private/file_ref.h>
 
+static inline void file_free(struct file *f)
+{
+    kfree(f);
+}
+
 /* the real guts of fput() - releasing the last reference to file
  */
 static void __fput(struct file *file)
 {
+    struct dentry *dentry = file->f_path.dentry;
+    struct vfsmount *mnt = file->f_path.mnt;
+
     pr_todo();
+
+    dput(dentry);
+    mntput(mnt);
+
+    file_free(file);
 }
 
 struct file *alloc_empty_file(int flags)
@@ -75,4 +88,11 @@ void fput_close_sync(struct file *file)
 {
     if (likely(file_ref_put_close(&file->f_ref)))
         __fput(file);
+}
+
+struct file *get_file(struct file *f)
+{
+    file_inc_ref(f);
+
+    return f;
 }

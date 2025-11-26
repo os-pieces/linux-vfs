@@ -1,6 +1,7 @@
 #include <linux/filedesc.h>
 #include <linux/string.h>
 #include <linux/list.h>
+#include <linux/spinlock.h>
 
 #define FD_USED ((void *)1)
 
@@ -14,6 +15,7 @@ int filedesc_init(filedesc_t *fdp, bool is_user)
     fdp->fdt_default.files = fdp->file_default;
     INIT_LIST_HEAD(&fdp->fdt_default.node);
     fdp->is_user = is_user;
+    spin_lock_init(&fdp->lock);
 
     return 0;
 }

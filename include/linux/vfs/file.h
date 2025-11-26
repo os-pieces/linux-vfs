@@ -84,3 +84,5 @@ static inline struct inode *file_inode(const struct file *f)
 void file_accessed(struct file *file);
 
 #define replace_fops(f, fops) ((f)->f_op = (fops))
+
+struct file *get_file(struct file *f);
