@@ -2,7 +2,7 @@
 
 #include <linux/vfs/fs.h>
 
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fd.h>
 #include <linux/vfs/private/mount.h>
 #include <linux/vfs/private/fs_context.h>
 #include <linux/vfs/private/dcache.h>

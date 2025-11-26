@@ -1,5 +1,4 @@
-#include <linux/vfs/fs.h>
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fs.h>
 
 static inline int close_fd_get_file(filedesc_t *fdp, unsigned int fd, struct file **fpp)
 {

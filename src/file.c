@@ -1,6 +1,6 @@
 #include <linux/vfs/fs.h>
 
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fd.h>
 #include <linux/vfs/private/file_ref.h>
 
 static inline void file_free(struct file *f)

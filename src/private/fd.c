@@ -1,5 +1,5 @@
 #include <linux/vfs/fs.h>
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fd.h>
 
 int __fget_light(filedesc_t *fdp, unsigned int fd,  struct fd *f, fmode_t mask)
 {

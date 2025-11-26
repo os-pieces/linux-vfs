@@ -1,7 +1,7 @@
 #include <linux/vfs/fs.h>
 
 #include <linux/vfs/private/namei.h>
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fd.h>
 
 struct open_how
 {
