@@ -7,7 +7,7 @@
 
 #include <linux/vfs/private/namei.h>
 #include <linux/vfs/private/dcache.h>
-#include <linux/vfs/private/path.h>
+#include <linux/vfs/cwd.h>
 #include <linux/vfs/private/filename.h>
 
 #include <linux/vfs/private/security.h>

@@ -1,5 +1,5 @@
 #include <linux/vfs/fs.h>
-#include <linux/vfs/private/path.h>
+#include <linux/vfs/cwd.h>
 
 void get_fs_root(filedesc_t *fdp, struct path *root)
 {
