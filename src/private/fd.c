@@ -1,5 +1,4 @@
-#include <linux/vfs/fs.h>
-#include <linux/vfs/private/fd.h>
+#include <linux/vfs/private/fs.h>
 
 int __fget_light(filedesc_t *fdp, unsigned int fd,  struct fd *f, fmode_t mask)
 {
@@ -45,10 +44,10 @@ int fdget(filedesc_t *fdp, unsigned int fd, struct fd *f)
 
 void fdput(struct fd fd)
 {
-    pr_todo();
+    fput(fd.file);
 }
 
 void fdput_pos(filedesc_t *fdp, struct fd f)
 {
-
+    fdput(f);
 }

@@ -1,6 +1,4 @@
-#include <linux/vfs/fs.h>
-
-#include <linux/vfs/private/fd.h>
+#include <linux/vfs/private/fs.h>
 #include <linux/vfs/private/file_ref.h>
 
 static inline void file_free(struct file *f)
@@ -35,10 +33,6 @@ struct file *alloc_empty_file(int flags)
     }
 
     return f;
-}
-
-void file_inc_ref(struct file *f)
-{
 }
 
 void fput(struct file *file)
@@ -92,7 +86,7 @@ void fput_close_sync(struct file *file)
 
 struct file *get_file(struct file *f)
 {
-    file_inc_ref(f);
+    file_ref_inc(f);
 
     return f;
 }

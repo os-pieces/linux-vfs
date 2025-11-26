@@ -70,3 +70,17 @@ static inline bool file_ref_put_close(file_ref_t *ref)
 
     return file_ref_put(ref);
 }
+
+/**
+ * file_ref_inc - Acquire one reference on a file
+ * @ref: Pointer to the reference count
+ *
+ * Acquire an additional reference on a file. Warns if the caller didn't
+ * already hold a reference.
+ */
+static inline void file_ref_inc(file_ref_t *ref)
+{
+    int prior = atomic_fetch_inc_relaxed(&ref->refcnt);
+
+    WARN_ONCE(prior < 0, "file_ref_inc() on a released file reference");
+}
