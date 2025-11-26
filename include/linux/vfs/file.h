@@ -7,6 +7,11 @@
 #include <linux/vfs/dir.h>
 #include <linux/vfs/path.h>
 
+typedef struct
+{
+    atomic_t refcnt;
+} file_ref_t;
+
 struct file
 {
     struct path f_path;
@@ -14,8 +19,9 @@ struct file
     const struct file_operations *f_op;
     unsigned f_mode;
     unsigned f_flags;
+    file_ref_t f_ref;
     loff_t f_pos;
-    struct address_space		*f_mapping;
+    struct address_space *f_mapping;
 
     void *private_data;
 };
@@ -26,12 +32,12 @@ struct file_operations
     loff_t (*llseek)(struct file *, loff_t, int);
     ssize_t (*read)(struct file *, char *, size_t, loff_t *);
     ssize_t (*write)(struct file *, const char *, size_t, loff_t *);
-    ssize_t (*read_iter) (struct kiocb *, struct iov_iter *);
+    ssize_t (*read_iter)(struct kiocb *, struct iov_iter *);
     ssize_t (*write_iter)(struct kiocb *, struct iov_iter *);
     int (*iterate_shared)(struct file *, struct dir_context *);
-    long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
-    int (*release) (struct inode *, struct file *);
-    int (*fsync) (struct file *, loff_t, loff_t, int datasync);
+    long (*unlocked_ioctl)(struct file *, unsigned int, unsigned long);
+    int (*release)(struct inode *, struct file *);
+    int (*fsync)(struct file *, loff_t, loff_t, int datasync);
 };
 
 /*
@@ -65,14 +71,14 @@ struct file_operations
 #define FMODE_CREATED (0x100000)
 
 /* File is opened with O_PATH; almost nothing can be done with it */
-#define FMODE_PATH		((__force fmode_t)0x4000)
+#define FMODE_PATH ((__force fmode_t)0x4000)
 
 #define OPEN_FMODE(flag) ((__force fmode_t)(((flag + 1) & O_ACCMODE) | \
-					    (flag & __FMODE_NONOTIFY)))
+                                            (flag & __FMODE_NONOTIFY)))
 
 static inline struct inode *file_inode(const struct file *f)
 {
-	return f->f_inode;
+    return f->f_inode;
 }
 
 void file_accessed(struct file *file);

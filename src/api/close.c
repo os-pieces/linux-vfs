@@ -19,14 +19,14 @@ static inline int close_fd_get_file(filedesc_t *fdp, unsigned int fd, struct fil
 
 int vfs_close_api(filedesc_t *fdp, int fd)
 {
-    int retval;
     struct file *file;
+    int err;
 
-    retval = close_fd_get_file(fdp, fd, &file);
-    if (retval == 0)
+    err = close_fd_get_file(fdp, fd, &file);
+    if (err == 0)
     {
-        __fput_sync(file);
+        fput_close_sync(file);
     }
 
-    return retval;
+    return err;
 }

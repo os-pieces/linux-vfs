@@ -17,3 +17,4 @@ extern void __fput_sync(struct file *);
 void fdput_pos(filedesc_t *fdp, struct fd f);
 
 struct file *alloc_empty_file(int flags);
+void fput_close_sync(struct file *file);
