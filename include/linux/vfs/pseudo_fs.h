@@ -11,5 +11,5 @@ struct pseudo_fs_context
 	unsigned long magic;
 };
 
-struct pseudo_fs_context *init_pseudo(struct fs_context *fc,
-									  unsigned long magic);
+int init_pseudo(struct fs_context *fc, unsigned long magic,
+                struct pseudo_fs_context **pctx);

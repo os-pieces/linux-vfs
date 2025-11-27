@@ -26,10 +26,11 @@ static const struct fs_context_operations pseudo_fs_context_ops = {
  * Common helper for pseudo-filesystems (sockfs, pipefs, bdev - stuff that
  * will never be mountable)
  */
-struct pseudo_fs_context *init_pseudo(struct fs_context *fc,
-                                      unsigned long magic)
+int init_pseudo(struct fs_context *fc, unsigned long magic,
+                struct pseudo_fs_context **pctx)
 {
     struct pseudo_fs_context *ctx;
+    int err = 0;
 
     ctx = kzalloc(sizeof(struct pseudo_fs_context), GFP_KERNEL);
     if (likely(ctx))
@@ -38,7 +39,13 @@ struct pseudo_fs_context *init_pseudo(struct fs_context *fc,
         fc->fs_private = ctx;
         fc->ops = &pseudo_fs_context_ops;
         fc->sb_flags |= SB_NOUSER;
+
+        *pctx = ctx;
+    }
+    else
+    {
+        err = -ENOMEM;
     }
 
-    return ctx;
+    return err;
 }
