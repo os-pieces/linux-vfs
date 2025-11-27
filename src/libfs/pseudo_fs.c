@@ -1,6 +1,12 @@
 #include <linux/vfs/fs.h>
 #include <linux/vfs/pseudo_fs.h>
 
+static int pseudo_fs_fill_super(struct super_block *s, struct fs_context *fc)
+{
+    pr_todo();
+    return 0;
+}
+
 static int pseudo_fs_get_tree(struct fs_context *fc)
 {
     return get_tree_nodev(fc, pseudo_fs_fill_super);
