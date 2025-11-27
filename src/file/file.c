@@ -35,17 +35,10 @@ struct file *alloc_empty_file(int flags)
     return f;
 }
 
-void fput(struct file *file)
-{
-    if (unlikely(file_ref_put(&file->f_ref)))
-    {
-        pr_todo();
-    }
-}
-
 void __fput_sync(struct file *file)
 {
-    pr_todo();
+	if (file_ref_put(&file->f_ref))
+		__fput(file);
 }
 
 void file_accessed(struct file *file)

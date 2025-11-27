@@ -44,7 +44,7 @@ int fdget(filedesc_t *fdp, unsigned int fd, struct fd *f)
 
 void fdput(struct fd fd)
 {
-    fput(fd.file);
+    __fput_sync(fd.file);
 }
 
 void fdput_pos(filedesc_t *fdp, struct fd f)
