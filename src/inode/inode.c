@@ -202,3 +202,8 @@ void inode_init_once(struct inode *inode)
 {
     pr_todo();
 }
+
+void free_inode_nonrcu(struct inode *inode)
+{
+    pr_todo();
+}

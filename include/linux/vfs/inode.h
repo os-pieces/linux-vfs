@@ -205,3 +205,5 @@ typedef void (*special_inode_initializer_t)(struct inode *inode);
 void set_special_inode_initializer(umode_t mode, special_inode_initializer_t initializer);
 
 #define inode_set_fops(inode, fops) ((inode)->i_fop = (fops))
+
+extern void free_inode_nonrcu(struct inode *inode);
