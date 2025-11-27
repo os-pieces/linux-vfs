@@ -10,7 +10,6 @@
 #include <linux/kernel.h>
 #include <linux/rcupdate.h>
 #include <linux/stdlib.h>
-#include <linux/vfs/audit.h>
 #include <linux/bug.h>
 #include <linux/spinlock.h>
 #include <linux/uaccess.h>
@@ -22,7 +21,7 @@
 #include <linux/filedesc.h>
 #include <linux/sched.h>
 #include <linux/delayed_call.h>
-#include <linux/init.h>
+#include <linux/initcall.h>
 #include <linux/export.h>
 #include <linux/uidgid.h>
 #include <linux/ktime.h>
@@ -35,6 +34,7 @@
 
 #include <linux/pagemap.h>
 
+#include <linux/vfs/audit.h>
 #include <linux/vfs/limits.h>
 #include <linux/vfs/statfs.h>
 #include <linux/vfs/inode.h>
