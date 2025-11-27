@@ -117,17 +117,6 @@ void inode_unlock(struct inode *inode)
 	up_write(&inode->i_rwsem);
 }
 
-void touch_atime(const struct path *path)
-{
-	pr_todo();
-}
-
-bool atime_needs_update(const struct path *path, struct inode *inode)
-{
-	pr_todo();
-	return true;
-}
-
 void mark_inode_dirty(struct inode *inode)
 {
 	pr_todo();
@@ -147,13 +136,6 @@ u64 inode_query_iversion(struct inode *inode)
 void drop_nlink(struct inode *inode)
 {
 	pr_todo();
-}
-
-struct timespec64 current_time(struct inode *inode)
-{
-    struct timespec64 now;
-
-    return now;
 }
 
 /**
