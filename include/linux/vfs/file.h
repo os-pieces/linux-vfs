@@ -155,3 +155,5 @@ void file_accessed(struct file *file);
 
 struct file *get_file(struct file *f);
 void fput(struct file *file);
+
+#define file_private(file) ((file)->private_data)
