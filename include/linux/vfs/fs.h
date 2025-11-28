@@ -90,9 +90,6 @@ static inline vfsuid_t i_uid_into_vfsuid(struct mnt_idmap *idmap,
 extern int register_filesystem(struct file_system_type *);
 extern int unregister_filesystem(struct file_system_type *);
 
-/* File was opened by fanotify and shouldn't generate fanotify events */
-#define FMODE_NONOTIFY ((__force fmode_t)0x4000000)
-
 #define ACC_MODE(x) ("\004\002\006\006"[(x) & O_ACCMODE])
 #define __FMODE_NONOTIFY ((__force int)FMODE_NONOTIFY)
 

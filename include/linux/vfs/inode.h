@@ -81,6 +81,7 @@ struct inode
 	{
 		char *i_link;
 		void *i_cdev;
+		void *i_pipe;
 	};
 
 	struct list_head i_sb_list;
