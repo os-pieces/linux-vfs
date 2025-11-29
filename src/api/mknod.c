@@ -29,6 +29,8 @@ int vfs_mknodat_api(filedesc_t *fdp, int atfd,
 
         error = vfs_mknod(idmap, ni.ni_ret_parent.dentry->d_inode,
                           ni.ni_ret_dentry, mode, dev);
+
+        done_path_create(&ni.ni_ret_parent, ni.ni_ret_dentry);
     }
 
     return error;

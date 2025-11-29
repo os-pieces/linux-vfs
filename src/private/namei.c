@@ -1480,3 +1480,12 @@ int kern_path(filedesc_t *fdp, const char *name, unsigned int flags, struct path
 
     return error;
 }
+
+void done_path_create(struct path *path, struct dentry *dentry)
+{
+	if (!IS_ERR(dentry))
+		dput(dentry);
+	inode_unlock(path->dentry->d_inode);
+	mnt_drop_write(path->mnt);
+	path_put(path);
+}
