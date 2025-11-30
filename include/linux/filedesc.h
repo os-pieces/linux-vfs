@@ -33,7 +33,7 @@ struct filedesc
     filedesc_path_t pwd;
     filedesc_path_t root;
 
-    spinlock_t lock;
+    spinlock_t file_lock;
     struct fdtable fdt_default;
     void *file_default[NR_OPEN_DEFAULT];
     bool is_user;

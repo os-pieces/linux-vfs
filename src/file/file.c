@@ -25,11 +25,12 @@ struct file *alloc_empty_file(int flags)
 {
     struct file *f;
 
-    f = kcalloc(1, sizeof(*f), 0);
+    f = kzalloc(sizeof(*f), GFP_KERNEL);
     if (f)
     {
         f->f_flags = flags;
         f->f_mode = OPEN_FMODE(flags);
+        file_ref_init(&f->f_ref, 1);
     }
 
     return f;
@@ -128,7 +129,7 @@ void fput_close_sync(struct file *file)
 
 struct file *get_file(struct file *f)
 {
-    file_ref_inc(f);
+    file_ref_inc(&f->f_ref);
 
     return f;
 }

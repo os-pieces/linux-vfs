@@ -15,7 +15,7 @@ int filedesc_init(filedesc_t *fdp, bool is_user)
     fdp->fdt_default.files = fdp->file_default;
     INIT_LIST_HEAD(&fdp->fdt_default.node);
     fdp->is_user = is_user;
-    spin_lock_init(&fdp->lock);
+    spin_lock_init(&fdp->file_lock);
 
     return 0;
 }

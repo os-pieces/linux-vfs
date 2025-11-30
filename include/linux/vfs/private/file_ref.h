@@ -84,3 +84,13 @@ static inline void file_ref_inc(file_ref_t *ref)
 
     WARN_ONCE(prior < 0, "file_ref_inc() on a released file reference");
 }
+
+/**
+ * file_ref_init - Initialize a file reference count
+ * @ref: Pointer to the reference count
+ * @cnt: The initial reference count typically '1'
+ */
+static inline void file_ref_init(file_ref_t *ref, unsigned int cnt)
+{
+    atomic_set(&ref->refcnt, cnt - 1);
+}

@@ -4,7 +4,7 @@ int __fget_light(filedesc_t *fdp, unsigned int fd,  struct fd *f, fmode_t mask)
 {
     int error = 0;
 
-    spin_lock(&fdp->lock);
+    spin_lock(&fdp->file_lock);
     f->file = filedesc_file_get(fdp, fd, false);
     if (f->file)
     {
@@ -14,7 +14,7 @@ int __fget_light(filedesc_t *fdp, unsigned int fd,  struct fd *f, fmode_t mask)
     {
         error = -EBADF;
     }
-    spin_unlock(&fdp->lock);
+    spin_unlock(&fdp->file_lock);
 
     return error;
 }
