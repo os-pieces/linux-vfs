@@ -1,6 +1,6 @@
 #include <linux/vfs/fs.h>
 #include <linux/vfs/private/namei.h>
-#include <linux/vfs/private/path.h>
+#include <linux/vfs/cwd.h>
 
 int vfs_chdir_api(filedesc_t *fdp, const char *name)
 {

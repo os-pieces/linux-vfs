@@ -1,5 +1,4 @@
-#include <linux/vfs/fs.h>
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fs.h>
 
 long vfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {

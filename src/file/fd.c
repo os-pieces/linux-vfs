@@ -1,19 +1,20 @@
-#include <linux/vfs/fs.h>
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fs.h>
 
 int __fget_light(filedesc_t *fdp, unsigned int fd,  struct fd *f, fmode_t mask)
 {
     int error = 0;
 
+    spin_lock(&fdp->file_lock);
     f->file = filedesc_file_get(fdp, fd, false);
     if (f->file)
     {
-
+        get_file(f->file);
     }
     else
     {
         error = -EBADF;
     }
+    spin_unlock(&fdp->file_lock);
 
     return error;
 }
@@ -25,7 +26,7 @@ int fdget_pos(filedesc_t *fdp, unsigned int fd, struct fd *f)
     error = fdget(fdp, fd, f);
     if (!error)
     {
-        pr_todo();
+        // TODO
     }
 
     return error;
@@ -43,10 +44,10 @@ int fdget(filedesc_t *fdp, unsigned int fd, struct fd *f)
 
 void fdput(struct fd fd)
 {
-    pr_todo();
+    __fput_sync(fd.file);
 }
 
 void fdput_pos(filedesc_t *fdp, struct fd f)
 {
-
+    fdput(f);
 }

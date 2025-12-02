@@ -2,32 +2,42 @@
 #include <linux/vfs/private/filename.h>
 #include <linux/vfs/private/namei.h>
 
-#define EMBEDDED_NAME_MAX    200//TODO
+/* In order to reduce some races, while at the same time doing additional
+ * checking and hopefully speeding things up, we copy filenames to the
+ * kernel data space before using them..
+ *
+ * POSIX.1 2.4: an empty pathname is invalid (ENOENT).
+ * PATH_MAX includes the nul terminator --RR.
+ */
 
-struct filename *__getname0(void)
+#define EMBEDDED_NAME_MAX (PATH_MAX - offsetof(struct filename, iname))
+
+static inline void initname(struct filename *name, const char __user *uptr)
 {
-    return kmalloc(sizeof(struct filename) + PATH_MAX, GFP_KERNEL);
+    name->uptr = uptr;
+    name->aname = NULL;
+    atomic_set(&name->refcnt, 1);
 }
 
-void putname(struct filename *n)
+static struct filename *__getname(void)
 {
-    pr_todo();
+    return kmalloc(PATH_MAX, GFP_KERNEL);
 }
 
-struct filename *getname_flags(const char __user *filename, 
-                               int flags, int *empty)
+static inline void __putname(void *n)
+{
+    kfree(n);
+}
+
+int getname_flags(const char __user *filename, int flags, struct filename **res)
 {
     struct filename *result;
     char *kname;
     int len;
 
-    result = audit_reusename(filename);
-    if (result)
-        return result;
-
-    result = __getname0();
+    result = __getname();
     if (unlikely(!result))
-        return ERR_PTR(-ENOMEM);
+        return -ENOMEM;
 
     /*
      * First, try to embed the struct filename inside the names_cache
@@ -37,10 +47,23 @@ struct filename *getname_flags(const char __user *filename,
     result->name = kname;
 
     len = strncpy_from_user(kname, filename, EMBEDDED_NAME_MAX);
-    if (unlikely(len < 0))
+    /*
+     * Handle both empty path and copy failure in one go.
+     */
+    if (unlikely(len <= 0))
     {
-        __putname(result);
-        return ERR_PTR(len);
+        if (unlikely(len < 0))
+        {
+            __putname(result);
+            return len;
+        }
+
+        /* The empty path is special. */
+        if (!(flags & LOOKUP_EMPTY))
+        {
+            __putname(result);
+            return -ENOENT;
+        }
     }
 
     /*
@@ -63,7 +86,7 @@ struct filename *getname_flags(const char __user *filename,
         if (unlikely(!result))
         {
             __putname(kname);
-            return ERR_PTR(-ENOMEM);
+            return -ENOMEM;
         }
         result->name = kname;
         len = strncpy_from_user(kname, filename, PATH_MAX);
@@ -71,42 +94,56 @@ struct filename *getname_flags(const char __user *filename,
         {
             __putname(kname);
             kfree(result);
-            return ERR_PTR(len);
+            return len;
+        }
+        /* The empty path is special. */
+        if (unlikely(!len) && !(flags & LOOKUP_EMPTY))
+        {
+            __putname(kname);
+            kfree(result);
+            return -ENOENT;
         }
         if (unlikely(len == PATH_MAX))
         {
             __putname(kname);
             kfree(result);
-            return ERR_PTR(-ENAMETOOLONG);
+            return -ENAMETOOLONG;
         }
     }
+    initname(result, filename);
 
-    result->refcnt = 1;
-    /* The empty path is special. */
-    if (unlikely(!len))
-    {
-        if (empty)
-            *empty = 1;
-        if (!(flags & LOOKUP_EMPTY))
-        {
-            putname(result);
-            return ERR_PTR(-ENOENT);
-        }
-    }
+    *res = result;
 
-    result->uptr = filename;
-    result->aname = NULL;
-    // TODO audit_getname(result);
-    return result;
-}
-
-struct filename *getname(const char __user *filename)
-{
-    return getname_flags(filename, 0, NULL);
-}
-
-int filename_get(const char *name)
-{
-    
     return 0;
+}
+
+int getname(const char __user *name, struct filename **res)
+{
+    return getname_flags(name, 0, res);
+}
+
+void putname(struct filename *name)
+{
+    int refcnt;
+
+    if (IS_ERR_OR_NULL(name))
+        return;
+
+    refcnt = atomic_read(&name->refcnt);
+    if (refcnt != 1)
+    {
+        if (WARN_ON_ONCE(!refcnt))
+            return;
+
+        if (!atomic_dec_and_test(&name->refcnt))
+            return;
+    }
+
+    if (name->name != name->iname)
+    {
+        __putname((void*)name->name);
+        kfree(name);
+    }
+    else
+        __putname(name);
 }

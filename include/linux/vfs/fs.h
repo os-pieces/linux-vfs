@@ -9,9 +9,7 @@
 #include <linux/wait.h>
 #include <linux/kernel.h>
 #include <linux/rcupdate.h>
-#include <linux/limits.h>
 #include <linux/stdlib.h>
-#include <linux/vfs/audit.h>
 #include <linux/bug.h>
 #include <linux/spinlock.h>
 #include <linux/uaccess.h>
@@ -23,7 +21,7 @@
 #include <linux/filedesc.h>
 #include <linux/sched.h>
 #include <linux/delayed_call.h>
-#include <linux/init.h>
+#include <linux/initcall.h>
 #include <linux/export.h>
 #include <linux/uidgid.h>
 #include <linux/ktime.h>
@@ -36,6 +34,8 @@
 
 #include <linux/pagemap.h>
 
+#include <linux/vfs/audit.h>
+#include <linux/vfs/limits.h>
 #include <linux/vfs/statfs.h>
 #include <linux/vfs/inode.h>
 #include <linux/vfs/dentry.h>
@@ -90,9 +90,6 @@ static inline vfsuid_t i_uid_into_vfsuid(struct mnt_idmap *idmap,
 extern int register_filesystem(struct file_system_type *);
 extern int unregister_filesystem(struct file_system_type *);
 
-/* File was opened by fanotify and shouldn't generate fanotify events */
-#define FMODE_NONOTIFY ((__force fmode_t)0x4000000)
-
 #define ACC_MODE(x) ("\004\002\006\006"[(x) & O_ACCMODE])
 #define __FMODE_NONOTIFY ((__force int)FMODE_NONOTIFY)
 
@@ -106,7 +103,8 @@ extern int unregister_filesystem(struct file_system_type *);
 /* called from RCU mode, don't block */
 #define MAY_NOT_BLOCK 0x00000080
 
-extern struct filename *getname(const char __user *);
+extern int getname(const char __user *name, struct filename **res);
+
 extern struct file_system_type *get_fs_type(const char *name);
 extern void iput(struct inode *);
 
@@ -136,9 +134,10 @@ static inline ino_t parent_ino(struct dentry *dentry)
 	 * Don't strictly need d_lock here? If the parent ino could change
 	 * then surely we'd have a deeper race in the caller?
 	 */
-	spin_lock(&dentry->d_lock);
+	d_lock(dentry);
 	res = dentry->d_parent->d_inode->i_ino;
-	spin_unlock(&dentry->d_lock);
+	d_unlock(dentry);
+
 	return res;
 }
 
@@ -163,9 +162,6 @@ enum file_time_flags
 };
 
 static inline bool sb_rdonly(const struct super_block *sb) { return sb->s_flags & SB_RDONLY; }
-
-void *__getname(void);
-void __putname(void *ptr);
 
 /*
  * This must be used for allocating filesystems specific inodes to set

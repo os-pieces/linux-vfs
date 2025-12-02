@@ -1,6 +1,5 @@
 #include <linux/vfs/private/fs.h>
 #include <linux/vfs/private/namei.h>
-#include <linux/vfs/private/path.h>
 
 static int vfs_statx(filedesc_t *fdp, int dfd, const char *name, int flags,
                      struct kstat *stat, u32 request_mask)

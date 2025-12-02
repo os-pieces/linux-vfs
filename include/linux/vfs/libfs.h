@@ -23,3 +23,5 @@ int simple_positive(const struct dentry *dentry);
 
 void simple_offset_init(struct offset_ctx *octx);
 int simple_offset_add(struct offset_ctx *octx, struct dentry *dentry);
+
+extern int stream_open(struct inode * inode, struct file * filp);

@@ -60,3 +60,5 @@ static inline int is_mounted(struct vfsmount *mnt)
     /* neither detached nor internal? */
     return !IS_ERR_OR_NULL(real_mount(mnt)->mnt_ns);
 }
+
+extern struct vfsmount *fc_mount(struct fs_context *fc);

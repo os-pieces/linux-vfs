@@ -9,12 +9,12 @@ src = Glob('src/*.c')
 src += Glob('src/api/*.c')
 src += Glob('src/libfs/*.c')
 src += Glob('src/private/*.c')
+src += Glob('src/uio/*.c')
+src += Glob('src/dentry/*.c')
+src += Glob('src/file/*.c')
+src += Glob('src/inode/*.c')
+src += Glob('src/mnt/*.c')
 
-group = DefineGroup('vfs', src, depend=[''], CPPPATH=inc)
-
-list = os.listdir(cwd)
-for item in list:
-    if os.path.isfile(os.path.join(cwd, item, 'SConscript')):
-        group = group + SConscript(os.path.join(item, 'SConscript'))
+group = DefineGroup('vfs', src, depend=['CONFIG_VFS'], CPPPATH=inc)
 
 Return('group')

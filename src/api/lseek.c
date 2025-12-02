@@ -1,5 +1,4 @@
-#include <linux/vfs/fs.h>
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fs.h>
 
 static loff_t vfs_llseek(struct file *file, loff_t offset, int whence)
 {

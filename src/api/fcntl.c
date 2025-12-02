@@ -1,5 +1,4 @@
-#include <linux/vfs/fs.h>
-#include <linux/vfs/private/file.h>
+#include <linux/vfs/private/fs.h>
 
 static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
                      struct file *filp)

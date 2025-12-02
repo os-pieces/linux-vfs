@@ -65,26 +65,6 @@ static ssize_t do_write(struct file *file, const char *buf, size_t count, loff_t
     return ret;
 }
 
-static inline int fd_getfile(filedesc_t *fdp, unsigned int fd, struct file **fpp)
-{
-    int error = 0;
-    struct file *file;
-
-    file = filedesc_file_get(fdp, fd, false);
-    if (file)
-    {
-        file_inc_ref(file);
-    }
-    else
-    {
-        error = -EBADF;
-    }
-
-    *fpp = file;
-
-    return error;
-}
-
 ssize_t vfs_write_api(filedesc_t *fdp, unsigned int fd, const void *buf, size_t size)
 {
     struct fd f;

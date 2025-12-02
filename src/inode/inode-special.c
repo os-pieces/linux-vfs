@@ -2,6 +2,7 @@
 
 static special_inode_initializer_t blk_initializer = NULL;
 static special_inode_initializer_t chr_initializer = NULL;
+static special_inode_initializer_t fifo_initializer = NULL;
 
 void set_special_inode_initializer(umode_t mode, special_inode_initializer_t initializer)
 {
@@ -9,6 +10,10 @@ void set_special_inode_initializer(umode_t mode, special_inode_initializer_t ini
         blk_initializer = initializer;
     else if (mode & S_IFCHR)
         chr_initializer = initializer;
+    else if (S_ISFIFO(mode))
+    {
+        fifo_initializer = initializer;
+    }
 }
 
 void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
@@ -24,5 +29,10 @@ void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
         inode->i_rdev = rdev;
         if (chr_initializer)
             chr_initializer(inode);
+    }
+    else if (S_ISFIFO(mode))
+    {
+        if (fifo_initializer)
+            fifo_initializer(inode);
     }
 }
