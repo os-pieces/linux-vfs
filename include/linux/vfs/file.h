@@ -6,6 +6,7 @@
 #include <linux/vfs/kiocb.h>
 #include <linux/vfs/dir.h>
 #include <linux/vfs/path.h>
+#include <linux/vfs/poll.h>
 
 typedef struct
 {
@@ -23,6 +24,12 @@ struct file
     loff_t f_pos;
     struct address_space *f_mapping;
 
+    union
+    {
+        /* pipes */
+        unsigned f_pipe;
+    };
+
     void *private_data;
 };
 
@@ -38,6 +45,7 @@ struct file_operations
     long (*unlocked_ioctl)(struct file *, unsigned int, unsigned long);
     int (*release)(struct inode *, struct file *);
     int (*fsync)(struct file *, loff_t, loff_t, int datasync);
+    __poll_t (*poll)(struct file *, struct poll_table_struct *);
 };
 
 /*
